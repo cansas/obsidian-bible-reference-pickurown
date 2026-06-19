@@ -1,19 +1,20 @@
+import { App } from 'obsidian'
 import { IBibleVersion } from '../interfaces/IBibleVersion'
 import { BibleAPIDotComProvider } from './BibleAPIDotComProvider'
 import { BaseBibleAPIProvider } from './BaseBibleAPIProvider'
 import { BibleAPISourceCollection } from '../data/BibleApiSourceCollection'
 import { BollyLifeProvider } from './BollyLifeProvider'
 import { BibleSuperSearchProvider } from './BibleSuperSearchProvider'
+import { VaultLocalProvider } from './VaultLocalProvider'
 
 /**
  * A factory for Bible API providers.
  * To create provider instance and decide which provider to use.
  */
 export class ProviderFactory {
-  // define a single instance of BibleAPIFactory
   private static _instance: ProviderFactory
+  private _app: App | null = null
 
-  // private constructor
   private constructor() {
     if (ProviderFactory._instance) {
       throw new Error(
@@ -23,21 +24,24 @@ export class ProviderFactory {
     ProviderFactory._instance = this
   }
 
-  // get instance of BibleAPIFactory
   public static get Instance(): ProviderFactory {
-    if (
-      ProviderFactory._instance === null ||
-      ProviderFactory._instance === undefined
-    ) {
+    if (!ProviderFactory._instance) {
       ProviderFactory._instance = new ProviderFactory()
     }
     return ProviderFactory._instance
   }
 
   /**
+   * Call once from the plugin's onload() to give vault-local providers
+   * access to the Obsidian App (needed to read vault files).
+   */
+  public static setApp(app: App): void {
+    ProviderFactory.Instance._app = app
+  }
+
+  /**
    * Get the bible api provider from bible version selected
    * @param bibleVersion
-   * @constructor
    */
   public BuildBibleVersionAPIAdapterFromIBibleVersion(
     bibleVersion: IBibleVersion
@@ -51,6 +55,15 @@ export class ProviderFactory {
       }
       case BibleAPISourceCollection.bibleSuperSearch: {
         return new BibleSuperSearchProvider(bibleVersion)
+      }
+      case BibleAPISourceCollection.vaultLocal: {
+        if (!this._app) {
+          console.error(
+            'ProviderFactory: vaultLocal provider requested but app is not set. Call ProviderFactory.setApp() in plugin onload().'
+          )
+          throw new Error('App not set for vaultLocal provider')
+        }
+        return new VaultLocalProvider(bibleVersion, this._app)
       }
       default: {
         return new BibleAPIDotComProvider(bibleVersion)

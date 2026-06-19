@@ -15,6 +15,9 @@ import { getEnhancedVod } from './provider/VODProvider'
 import { splitBibleReference } from './utils/splitBibleReference'
 import { VerseOfDaySuggesting } from './verse/VerseOfDaySuggesting'
 import { getBibleVersion } from './data/BibleVersionCollection'
+import { BibleVersionCollection } from './data/BibleVersionCollection'
+import { ProviderFactory } from './provider/ProviderFactory'
+import { discoverLocalVersions } from './provider/VaultLocalProvider'
 import { pluginEvent } from './obsidian/PluginEvent'
 import { BibleReferenceAPI } from './api/PluginAPI'
 
@@ -35,6 +38,18 @@ export default class BibleReferencePlugin extends Plugin {
     console.debug('loading plugin -', APP_NAMING.appName)
 
     await this.loadSettings()
+    ProviderFactory.setApp(this.app)
+
+    // Discover local vault translations (Scripture (X) folders)
+    const localVersions = discoverLocalVersions(this.app)
+    BibleVersionCollection.push(...localVersions)
+    if (localVersions.length > 0) {
+      console.debug(
+        `[BibleReference] Discovered ${localVersions.length} local vault translations:`,
+        localVersions.map((v) => v.key).join(', '),
+      )
+    }
+
     this.addSettingTab(new BibleReferenceSettingTab(this.app, this))
     this.registerEditorSuggest(new VerseEditorSuggester(this, this.settings))
 
