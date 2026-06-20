@@ -1,4 +1,4 @@
-## Obsidian Bible Reference
+## Obsidian Bible Reference You Pick 'em Fork
 
 - This fork enables choosing local vault saved bible version to be used with the plugin
 - Simplify your Bible Study note-taking experience with the user-friendly [Obsidian.md](https://obsidian.md/) notes app.
